@@ -1,0 +1,19 @@
+version: latest #версия compose-file
+services: #сервисы для которых будут созадваться контейнеры
+  db: #база данных
+    image: postgres:latest #образ, который будет использован для контейнера с базой данных
+    ports: #порты у контейнера
+      - 5432:5432
+    environment : # окружение - параметры будущей базы данных в контейнере
+      POSTGRES_USER: bs_user #пользлователь
+      POSTGRES_PASSWORD: password_bs #пароль
+      POSTGRES_DB: Library #имя базы даных
+    volumes:
+      - ./library_script/init.sql:/docker-entrypoint-initdb.d/init.sql #подключение скрипта "джуна" - скрипта который выполнится при создании контейнера
+      - ./volume_library:/var/lib/postgresql/data #том для сохранения изменений в базе
+    healthcheck : #проверка что сервис db живой
+      test: ["CMD","pg_isready", "-d", "library", "-U", "bs_user"]
+      interval: 5s
+      retries: 5
+    restart: always
+  
