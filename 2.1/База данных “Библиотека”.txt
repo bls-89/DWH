@@ -13,7 +13,6 @@ Books:
  
 id_book (int) (PK)
 book_name (varchar)
-author_id(int) (FK)
 year_of_publish(int)
 pages_quantity(int)
 cost(int)
