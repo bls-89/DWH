@@ -1,0 +1,13 @@
+1) SELECT firstname, lastname, totalamount FROM
+customers INNER JOIN orders ON customers.customerid = orders.customerid
+ORDER BY totalamount DESC;
+
+2)SELECT firstname, lastname, orderid, totalamount, sum(totalamount) over (partition by customers.customerid) as sum_of_all_orders
+FROM orders INNER JOIN customers ON customers.customerid = orders.customerid
+order BY sum_of_all_orders DESC 
+
+
+3)SELECT firstname, lastname 
+FROM customers INNER JOIN orders ON customers.customerid = orders.customerid
+	WHERE totalamount > (SELECT avg(totalamount) FROM orders)
+ORDER BY totalamount DESC
