@@ -10,6 +10,7 @@ WHERE customerid in (SELECT customerid FROM orders GROUP BY customerid ORDER BY 
 3)SELECT customers.customerid, customers.firstname, customers.lastname, orders.orderid, orders.totalamount
 FROM orders inner join customers
 on orders.customerid = customers.customerid
-WHERE customers.customerid in (SELECT customerid FROM orders GROUP BY customerid ORDER BY SUM(totalamount) DESC LIMIT 1) ORDER BY totalamount DESC;
+WHERE customers.customerid in (SELECT customerid FROM orders GROUP BY customerid ORDER BY SUM(totalamount) DESC LIMIT 1) 
+ORDER BY totalamount DESC;
 
 
