@@ -1,16 +1,27 @@
-1) SELECT firstname, lastname, totalamount FROM
-customers INNER JOIN orders ON customers.customerid = orders.customerid
-ORDER BY totalamount DESC;
-
-2)SELECT customerid, firstname, lastname
-FROM customers
-WHERE customerid in (SELECT customerid FROM orders GROUP BY customerid ORDER BY SUM(totalamount) DESC LIMIT 1);
+1)SELECT c.FirstName, c.LastName, SUM(o.TotalAmount) as Total
+FROM Customers c
+JOIN Orders o ON c.CustomerID = o.CustomerID
+GROUP BY c.CustomerID
+ORDER BY Total DESC
 
 
-3)SELECT customers.customerid, customers.firstname, customers.lastname, orders.orderid, orders.totalamount
-FROM orders inner join customers
-on orders.customerid = customers.customerid
-WHERE customers.customerid in (SELECT customerid FROM orders GROUP BY customerid ORDER BY SUM(totalamount) DESC LIMIT 1) 
-ORDER BY totalamount DESC;
+2)SELECT c.FirstName, c.LastName, o.OrderID, o.TotalAmount
+FROM (
+    SELECT CustomerID, SUM(TotalAmount) as Total
+    FROM Orders
+    GROUP BY CustomerID
+) as s
+JOIN Customers c ON c.CustomerID = s.CustomerID
+JOIN Orders o ON o.CustomerID = s.CustomerID
+ORDER BY s.Total DESC, o.TotalAmount DESC
 
+3)SELECT FirstName, LastName
+FROM Customers
+WHERE CustomerID IN (
+    SELECT CustomerID
+    FROM Orders
+    GROUP BY CustomerID
+    HAVING SUM(TotalAmount) > (
+        SELECT AVG(TotalAmount)
+        FROM Orders))
 
