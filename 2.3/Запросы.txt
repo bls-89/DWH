@@ -1,16 +1,14 @@
 1)SELECT firstname,lastname  
 FROM orders INNER JOIN customers  ON customers.customerid = orders.customerid  
-WHERE totalamount <= (SELECT max(totalamount) FROM orders)
+WHERE totalamount IN (SELECT max(totalamount) FROM orders)
 Order by totalamount DESC 
-limit 3
 
 
 
-2)SELECT firstname, lastname, orderid, sum(totalamount) OVER (
-PARTITION BY orders.totalamount 
-ORDER BY totalamount DESC)
-FROM orders INNER JOIN customers ON customers.customerid = orders.customerid
-limit 3
+2)SELECT firstname, lastname, orderid, totalamount
+FROM customers INNER JOIN orders  ON customers.customerid = orders.customerid  
+WHERE customers.customerid  IN (select orders.customerid WHERE totalamount IN (SELECT max(totalamount) FROM orders)) 
+ORDER BY totalamount DESC
 
 
 3)SELECT firstname, lastname 
