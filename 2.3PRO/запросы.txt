@@ -1,0 +1,79 @@
+
+
+
+
+1) SELECT DISTINCT  customers.firstname, customers.lastname, sum(orderdetails.quantity) OVER (PARTITION BY orders.customerid) totalquantity , sum (orders.totalamount) OVER
+(PARTITION BY orders.customerid) totalsum
+FROM customers INNER JOIN orders  ON customers.customerid = orders.customerid INNER JOIN orderdetails ON orders.orderid = orderdetails.orderid 
+ORDER BY totalsum DESC
+
+
+2) SELECT 
+    Customers.CustomerID,
+    Customers.FirstName,
+    Customers.LastName,
+    Orders.OrderID,
+    Orders.OrderDate,
+    Orders.TotalAmount,
+    CASE 
+        WHEN Orders.OrderDate >= CURRENT_DATE - INTERVAL '1 month' THEN 'Новые заказы'
+        ELSE 'Старые заказы'
+    END as OrderCategory
+FROM 
+    Customers
+INNER JOIN 
+    Orders ON Customers.CustomerID = Orders.CustomerID
+ORDER BY 
+    OrderDate DESC;
+
+
+3) SELECT 
+    Customers.CustomerID,
+    Customers.FirstName,
+    Customers.LastName,
+    AVG(ProductReviews.Rating) as AverageRating
+FROM 
+    Customers
+INNER JOIN 
+    ProductReviews ON Customers.CustomerID = ProductReviews.CustomerID
+GROUP BY 
+    Customers.CustomerID, Customers.FirstName, Customers.LastName;
+
+4) WITH OrderSummary AS (
+    SELECT 
+        Customers.CustomerID,
+        SUM(Orders.TotalAmount) as TotalOrderAmount,
+        SUM(OrderDetails.Quantity) as TotalQuantity
+    FROM 
+        Customers
+    INNER JOIN 
+        Orders ON Customers.CustomerID = Orders.CustomerID
+    INNER JOIN 
+        OrderDetails ON Orders.OrderID = OrderDetails.OrderID
+    GROUP BY 
+        Customers.CustomerID
+),
+ReviewSummary AS (
+    SELECT 
+        Customers.CustomerID,
+        AVG(ProductReviews.Rating) as AverageRating
+    FROM 
+        Customers
+    INNER JOIN 
+        ProductReviews ON Customers.CustomerID = ProductReviews.CustomerID
+    GROUP BY 
+        Customers.CustomerID
+)
+SELECT 
+    Customers.CustomerID,
+    Customers.FirstName,
+    Customers.LastName,
+    OrderSummary.TotalOrderAmount,
+    OrderSummary.TotalQuantity,
+    ReviewSummary.AverageRating
+FROM 
+    Customers
+LEFT JOIN 
+    OrderSummary ON Customers.CustomerID = OrderSummary.CustomerID
+LEFT JOIN 
+    ReviewSummary ON Customers.CustomerID = ReviewSummary.CustomerID;
