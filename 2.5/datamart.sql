@@ -18,13 +18,3 @@ FROM stats INNER JOIN sales ON stats.sale_month = sales.sale_month AND stats.sho
 GROUP BY stats.sale_month, sales.shop_name,sales.sales_fact,sales.product_id,stats.sales_plan,sales.income_fact,stats.income_plan
 ORDER BY sale_month, shop_name,product_id
 
-
-
-
---тоько в интернетах почему- то еще вот это упоминают:
---CREATE VIEW view_name AS
---SELECT column1, column2, ...
---FROM table_name
---WHERE condition;
-
--- куда это засунуть уже непонятно

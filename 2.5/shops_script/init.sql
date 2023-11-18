@@ -130,6 +130,7 @@ INSERT INTO public.shop_sitilink (date, product_id, sales_count) VALUES
 ('2023-10-03',2,10),
 ('2023-10-03',3,10);
 
+CREATE VIEW MART AS
 WITH sales AS
 (SELECT TO_CHAR("date", 'YYYY-MM') AS sale_month, shops.product_id, SUM(shops.sales_count) AS sales_fact, SUM(sales_count * products.price)AS income_fact , shop_name
 FROM (SELECT *, 'dns' as shop_name FROM shop_dns  
