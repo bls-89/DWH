@@ -1,0 +1,94 @@
+ВИТРИНА 
+1) часть с подсчетом реальных продаж
+
+
+WITH sales AS
+(SELECT TO_CHAR("date", 'YYYY-MM') AS sale_month, shops.product_id, SUM(shops.sales_count) AS sales_fact, SUM(sales_count * products.price)AS income_fact , shop_name
+FROM (SELECT *, 'dns' as shop_name FROM shop_dns  
+UNION ALL
+SELECT *, 'mvideo' as shop_name FROM shop_mvideo  
+UNION ALL
+SELECT *, 'sitilink' as shop_name FROM shop_sitilink
+) as shops INNER JOIN
+products ON shops.product_id = products.product_id
+GROUP BY sale_month, shops.product_id, shop_name,sales_count,products.price
+ORDER BY sale_month, shop_name,product_id)
+SELECT * FROM sales 
+
+
+
+2) добавим часть  с подсчетом плановых продаж
+
+
+stats AS 
+(SELECT TO_CHAR("plan_date", 'YYYY-MM') AS sale_month, plan.product_id, shop_name, plan_count AS sales_plan, (plan_count * products.price) as income_plan
+FROM plan INNER JOIN products ON plan.product_id = products.product_id)
+SELECT * FROM stats
+
+
+
+ИХ ОБЬЕДИНЯЕМ БЕЗ ЛОКАЛЬНЫХ СЕЛЕКТОВ У КАЖДОГО (они были нужны чтоб хоть посмотреть что там выводит)
+
+WITH sales AS
+(SELECT TO_CHAR("date", 'YYYY-MM') AS sale_month, shops.product_id, SUM(shops.sales_count) AS sales_fact, SUM(sales_count * products.price)AS income_fact , shop_name
+FROM (SELECT *, 'dns' as shop_name FROM shop_dns  
+UNION ALL
+SELECT *, 'mvideo' as shop_name FROM shop_mvideo  
+UNION ALL
+SELECT *, 'sitilink' as shop_name FROM shop_sitilink
+) as shops INNER JOIN
+products ON shops.product_id = products.product_id
+GROUP BY sale_month, shops.product_id, shop_name,sales_count,products.price
+ORDER BY sale_month, shop_name,product_id)
+stats AS 
+(SELECT TO_CHAR("plan_date", 'YYYY-MM') AS sale_month, plan_count AS sales_plan, (plan_count * products.price) as income_plan
+FROM plan INNER JOIN products ON plan.product_id = products.product_id)
+
+И теперь надо СОМКНУТЬ ВСЕ ВМЕСТЕ И ДОАВИТЬ КОЛОНКИ С ОТНОШЕНИЕМ (делением)
+
+ПОЛУЧИЛАСЬ ХЕРНЯ С 162 строками: 
+
+WITH sales AS
+(SELECT TO_CHAR("date", 'YYYY-MM') AS sale_month, shops.product_id, SUM(shops.sales_count) AS sales_fact, SUM(sales_count * products.price)AS income_fact , shop_name
+FROM (SELECT *, 'dns' as shop_name FROM shop_dns  
+UNION ALL
+SELECT *, 'mvideo' as shop_name FROM shop_mvideo  
+UNION ALL
+SELECT *, 'sitilink' as shop_name FROM shop_sitilink
+) as shops INNER JOIN
+products ON shops.product_id = products.product_id
+GROUP BY sale_month, shops.product_id, shop_name,sales_count,products.price
+ORDER BY sale_month, shop_name,product_id),
+stats AS 
+(SELECT TO_CHAR("plan_date", 'YYYY-MM') AS sale_month, plan_count AS sales_plan, (plan_count * products.price) as income_plan
+FROM plan INNER JOIN products ON plan.product_id = products.product_id)
+SELECT stats.sale_month,shop_name,product_id,sales_fact,sales_plan,(sales_fact / sales_plan) as "sF/sP",income_fact, income_plan, (income_fact / income_plan) as "iF/iP"
+FROM stats INNER JOIN sales ON stats.sale_month = sales.sale_month
+GROUP BY stats.sale_month, sales.shop_name,sales.sales_fact,sales.product_id,stats.sales_plan,sales.income_fact,stats.income_plan
+ORDER BY sale_month, shop_name,product_id
+
+ШАМАНИЛ С JOIN в итоге вот плолучилось: 
+
+WITH sales AS
+(SELECT TO_CHAR("date", 'YYYY-MM') AS sale_month, shops.product_id, SUM(shops.sales_count) AS sales_fact, SUM(sales_count * products.price)AS income_fact , shop_name
+FROM (SELECT *, 'dns' as shop_name FROM shop_dns  
+UNION ALL
+SELECT *, 'mvideo' as shop_name FROM shop_mvideo  
+UNION ALL
+SELECT *, 'sitilink' as shop_name FROM shop_sitilink
+) as shops INNER JOIN
+products ON shops.product_id = products.product_id
+GROUP BY sale_month, shops.product_id, shop_name,sales_count,products.price
+ORDER BY sale_month, shop_name,product_id),
+stats AS 
+(SELECT TO_CHAR("plan_date", 'YYYY-MM') AS sale_month,shop_name,plan.product_id, plan_count AS sales_plan, (plan_count * products.price) as income_plan
+FROM plan INNER JOIN products ON plan.product_id = products.product_id)
+SELECT stats.sale_month,sales.shop_name,sales.product_id,sales_fact,sales_plan,(sales_fact / sales_plan) as "sF/sP",sales.income_fact, stats.income_plan, (income_fact / income_plan) as "iF/iP"
+FROM stats INNER JOIN sales ON stats.sale_month = sales.sale_month AND stats.shop_name=sales.shop_name AND stats.product_id = sales.product_id 
+GROUP BY stats.sale_month, sales.shop_name,sales.sales_fact,sales.product_id,stats.sales_plan,sales.income_fact,stats.income_plan
+ORDER BY sale_month, shop_name,product_id
+
+
+теперь надо нормалоьно деление округлить до 2 поле запятой и умножить на 100
+
+К черту округление. Значок процента все спасает)
