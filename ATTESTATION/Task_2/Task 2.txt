@@ -1,0 +1,99 @@
+CREATE TABLE vacancies
+(
+  Ids UInt32,
+  Employer String,
+  Name String,
+  Salary Bool,
+  From Nullable(Float32),
+  To Nullable(Float32),
+  Experience String,
+  Schedule String,
+  Keys String,
+  Description String,
+  Area String,
+  Professional_roles String,
+  Specializations String,
+  Profarea_names String,
+  Published_at DateTime
+)
+ENGINE = MergeTree()
+ORDER BY (Area, Ids);
+
+
+
+clickhouse-client --input_format_csv_skip_first_lines=1 \
+ --date_time_input_format=best_effort -q "insert into vacancies format CSV" < /csv/IT_vacancies_full.csv
+
+
+
+--1 удаление столбцов
+
+ALTER TABLE vacancies  
+  DROP COLUMN Professional_roles, 
+  DROP COLUMN Specializations, 
+  DROP COLUMN Profarea_names;
+ 
+--2и3 Разбиение по местоположению и исключение строк без указания зарплаты
+ 
+SELECT Area, COUNT(Area)
+FROM vacancies v 
+GROUP BY Area;
+
+-- значения Area только "Москва" и "Санкт-Петербург", значит будет 2 таблицы:
+
+CREATE TABLE IF NOT EXISTS vacancies_moscow
+ENGINE = MergeTree()
+ORDER BY Ids
+AS SELECT
+  Ids,
+  Employer,
+  Name,
+  Salary,
+  "From",
+  "To",
+  Experience,
+  Schedule,
+  Keys,
+  Description,
+  Area,
+  Published_at
+FROM vacancies v 
+WHERE Area = 'Москва' AND Salary = TRUE;
+
+CREATE TABLE IF NOT EXISTS vacancies_piter
+ENGINE = MergeTree()
+ORDER BY Ids
+AS SELECT
+  Ids,
+  Employer,
+  Name,
+  Salary,
+  "From",
+  "To",
+  Experience,
+  Schedule,
+  Keys,
+  Description,
+  Area,
+  Published_at
+FROM vacancies v 
+WHERE Area = 'Санкт-Петербург' AND Salary = TRUE;
+
+--часть2
+
+SELECT
+  'Москва' AS "Местоположение",
+  COUNT(*) AS "Кол-во вакансий",
+  ROUND(AVG("From")) AS "Средняя начальная зарплата ОТ",
+  ROUND(AVG("To")) AS "Средний максимум зарплаты ДО"
+FROM vacancies_moscow
+  UNION ALL
+SELECT
+  'Санкт-Петербург' AS "Местоположение",
+  COUNT(*) AS "Кол-во вакансий",
+  ROUND(AVG("From")) AS "Средняя начальная зарплата ОТ",
+  ROUND(AVG("To")) AS "Средний максимум зарплаты ДО"
+FROM vacancies_piter
+
+--Строки без зарплаты удалены на этапе формирования таблиц по местоположению.
+--После удаления в Москве осталось 46120 вакансий из 135100, в Санкт-Петербурге осталось 24208 из 59156
