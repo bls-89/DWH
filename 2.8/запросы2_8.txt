@@ -32,8 +32,7 @@ SELECT
     order_date, 
     sum(revenue) OVER (PARTITION BY category ORDER BY order_date) as cumulative_revenue,
     count() OVER (PARTITION BY category ORDER BY order_date) as cumulative_orders,
-    (sum(revenue) OVER (PARTITION BY category ORDER BY order_date)) / (count() OVER (PARTITION BY category ORDER BY order_date)) as average_check,
-    
+    (sum(revenue) OVER (PARTITION BY category ORDER BY order_date)) / (count() OVER (PARTITION BY category ORDER BY order_date)) as average_check 
 FROM sales
 ORDER BY category, order_date;
 
