@@ -1,0 +1,61 @@
+--создадим таблицу sales с категориями, датой и выручкой.
+CREATE TABLE sales
+(
+  category Int32,
+  order_date Date,
+  revenue Int32,
+  )
+ENGINE = MergeTree()
+ORDER BY (order_date);
+
+
+--заполним таблицу рандомно 4 категориями в течении октября 2023 года и рандомными выручками)
+
+INSERT INTO sales (category, order_date, revenue)
+SELECT 
+    toInt32(rand() % 4) AS category,
+    toDate('2023-10-01') + toInt32(rand() % 30) AS order_date,
+    toInt32(rand() % 1000) AS revenue
+FROM 
+(
+    SELECT number 
+    FROM system.numbers 
+    LIMIT 3000
+);
+
+______________________________________________________________________________________________________________________________________________
+
+--кумулятивная выручка и средний чек по датам:
+
+SELECT 
+    DISTINCT category, 
+    order_date, 
+    sum(revenue) OVER (PARTITION BY category ORDER BY order_date) as cumulative_revenue,
+    count() OVER (PARTITION BY category ORDER BY order_date) as cumulative_orders,
+    (sum(revenue) OVER (PARTITION BY category ORDER BY order_date)) / (count() OVER (PARTITION BY category ORDER BY order_date)) as average_check,
+    
+FROM sales
+ORDER BY category, order_date;
+
+
+
+--даты максимального среднего чека и его значение:
+
+
+WITH sales_data AS (
+    SELECT 
+        category, 
+        order_date, 
+        sum(revenue) OVER (PARTITION BY category ORDER BY order_date) as cumulative_revenue,
+        count() OVER (PARTITION BY category ORDER BY order_date) as cumulative_orders,
+        (sum(revenue) OVER (PARTITION BY category ORDER BY order_date)) / 
+        (count() OVER (PARTITION BY category ORDER BY order_date)) as average_check
+    FROM sales
+)
+SELECT 
+    category, 
+    max(average_check) as max_average_check_value,
+    argMax(order_date, average_check) as max_avg_check_date
+    FROM sales_data
+GROUP BY category
+ORDER BY category;
